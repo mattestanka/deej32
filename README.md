@@ -52,8 +52,9 @@ Here is the wiring guide for the components:
 1. Install **deej** on your computer: [Get deej here](https://github.com/omriharel/deej).
 2. Flash the provided Arduino code to your ESP32.
 3. Connect the ESP32 to your computer via USB.
-4. Run **deej** on your computer, and configure it to recognize the serial input from the ESP32.
-5. Test the rotary encoders to navigate sliders and control volume.
+4. Connect to the DEEJ WiFi network and navigate to 192.168.4.1
+6. Run **deej** on your computer, and configure it to recognize the serial input from the ESP32.
+7. Test the rotary encoders to navigate sliders and control volume.
 
 ---
 
@@ -92,15 +93,14 @@ The project supports a simple JSON structure for defining sliders. Update this c
 - `muted`: Set to `true` or `false` to mute/unmute the slider.
 - `previous_value`: Stores the last unmuted value for easy recovery.
 
-Update these values and upload the JSON to the **deej web UI** to customize the sliders.
+Update these values and upload the JSON to the **ESP32 web UI** to customize the sliders.
 
 ---
 
 ## Video Build Log
 Check the first part of the prototyping log:
-[Your Video Link Here](#) *(Replace with actual video link)*
 
-In this video, I show how the rotary encoders interact with the display to control different sliders in **deej**.
+
 
 ---
 
