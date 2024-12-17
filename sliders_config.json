@@ -1,0 +1,24 @@
+{
+    "num_sliders": 3,
+    "sliders": [
+      {
+        "name": "Main",
+        "value": 100,
+        "muted": false,
+        "previous_value": 100
+      },
+      {
+        "name": "System",
+        "value": 100,
+        "muted": false,
+        "previous_value": 100
+      },
+      {
+        "name": "Mic",
+        "value": 100,
+        "muted": false,
+        "previous_value": 100
+      }
+    ]
+  }
+  
