@@ -63,11 +63,6 @@ void markDataSaved() {
 }
 
 bool loadSliderConfig() {
-    if (!SPIFFS.begin(true)) {
-        Serial.println("SPIFFS Mount Failed");
-        return false;
-    }
-
     if (!SPIFFS.exists("/sliders_config.json")) {
         Serial.println("No config found, creating default with 3 sliders.");
         StaticJsonDocument<512> doc;
@@ -189,30 +184,14 @@ bool saveSliderConfig() {
     return true;
 }
 
+extern void displayError(const char* line1, const char* line2);
+
 void initDeejControl() {
     if (!loadSliderConfig()) {
-        numSliders = 5;
-        sliderValues = new int[numSliders];
-        previousValues = new int[numSliders];
-        mutedStates = new bool[numSliders];
-        sliderNames = new String[numSliders];
-        lastSavedValues = new int[numSliders];
-        lastSavedMuted = new bool[numSliders];
-        lastSavedPreviousValues = new int[numSliders];
-
-        const char* defaultNames[5] = {"Volume", "Brightness", "Bass", "Treble", "Balance"};
-        int defaultValues[5] = {50, 30, 60, 40, 20};
-
-        for (int i = 0; i < numSliders; i++) {
-            sliderNames[i] = defaultNames[i];
-            sliderValues[i] = defaultValues[i];
-            previousValues[i] = defaultValues[i];
-            mutedStates[i] = false;
-            lastSavedValues[i] = defaultValues[i];
-            lastSavedMuted[i] = false;
-            lastSavedPreviousValues[i] = defaultValues[i];
-        }
-        Serial.println("Loaded default slider config.");
+        Serial.println("Failed to load slider config, and no default could be created.");
+        displayError("Config Error!", "Please upload config.");
+        delay(1000);
+        startWifiSetupMode();
     }
 
     pinMode(ENCODER1_CLK, INPUT_PULLUP);
