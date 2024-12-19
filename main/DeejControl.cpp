@@ -1,10 +1,5 @@
 #include "DeejControl.h"
-
-#define ENCODER1_CLK 15
-#define ENCODER1_DT 2
-#define ENCODER1_SW 4
-#define ENCODER2_CLK 18
-#define ENCODER2_DT 19
+#include "WiFiSetup.h"
 
 const int SCALE_FACTOR = 2; 
 const int MAX_VALUE = 100;
@@ -24,25 +19,31 @@ int currentSlider = 0;
 unsigned long lastChangeTime = 0;   
 unsigned long writeInterval = 10000; // 10 seconds wait after last change
 bool dataDirty = false;
-int* lastSavedValues = nullptr;  // Track last saved values to avoid unnecessary writes
-bool* lastSavedMuted = nullptr;  // Track last saved muted states
-int* lastSavedPreviousValues = nullptr; // Track last saved previous values
+int* lastSavedValues = nullptr;  
+bool* lastSavedMuted = nullptr;  
+int* lastSavedPreviousValues = nullptr;
+
+// For long-press on second encoder
+unsigned long encoder2PressStart = 0;
+bool encoder2LongPressActive = false;
+
+// External variables
+extern bool inWifiSetupMode;
 
 void IRAM_ATTR encoder1ISR() {
     if (digitalRead(ENCODER1_CLK) == digitalRead(ENCODER1_DT))
-        encoderDelta1 = -SCALE_FACTOR; // Counterclockwise
+        encoderDelta1 = -SCALE_FACTOR; 
     else
-        encoderDelta1 = SCALE_FACTOR;  // Clockwise
+        encoderDelta1 = SCALE_FACTOR;  
 }
 
 void IRAM_ATTR encoder2ISR() {
     if (digitalRead(ENCODER2_CLK) == digitalRead(ENCODER2_DT))
-        encoderDelta2 = -1; // Previous slider
+        encoderDelta2 = -1; 
     else
-        encoderDelta2 = 1;  // Next slider
+        encoderDelta2 = 1;  
 }
 
-// Check if current state differs from last saved state
 bool valuesAreDifferent() {
     for (int i = 0; i < numSliders; i++) {
         if (sliderValues[i] != lastSavedValues[i]) return true;
@@ -68,14 +69,13 @@ bool loadSliderConfig() {
     }
 
     if (!SPIFFS.exists("/sliders_config.json")) {
-        Serial.println("No config found, creating default with 5 sliders.");
+        Serial.println("No config found, creating default with 3 sliders.");
         StaticJsonDocument<512> doc;
         doc["num_sliders"] = 3;
         JsonArray sliders = doc.createNestedArray("sliders");
 
-        // Default sliders in 0–100 scale, all unmuted
-        const char* defaultNames[5] = {"Master", "System", "Mic"};
-        int defaultValues[5] = {100, 100};
+        const char* defaultNames[3] = {"Master", "System", "Mic"};
+        int defaultValues[3] = {100, 100, 100};
 
         for (int i = 0; i < 3; i++) {
             JsonObject s = sliders.createNestedObject();
@@ -128,9 +128,9 @@ bool loadSliderConfig() {
         JsonObject s = sliders[i];
         sliderNames[i] = s["name"].as<String>();
 
-        int val = s["value"] | 50; // default 50 if not found
+        int val = s["value"] | 50; 
         bool muted = s["muted"] | false;
-        int prevVal = s["previous_value"] | val; // default previous_value to current if not found
+        int prevVal = s["previous_value"] | val;
 
         sliderValues[i] = val;
         previousValues[i] = prevVal;
@@ -191,7 +191,6 @@ bool saveSliderConfig() {
 
 void initDeejControl() {
     if (!loadSliderConfig()) {
-        // If loading fails, set defaults
         numSliders = 5;
         sliderValues = new int[numSliders];
         previousValues = new int[numSliders];
@@ -221,6 +220,7 @@ void initDeejControl() {
     pinMode(ENCODER1_SW, INPUT_PULLUP);
     pinMode(ENCODER2_CLK, INPUT_PULLUP);
     pinMode(ENCODER2_DT, INPUT_PULLUP);
+    pinMode(ENCODER2_SW, INPUT_PULLUP);
 
     attachInterrupt(digitalPinToInterrupt(ENCODER1_CLK), encoder1ISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(ENCODER2_CLK), encoder2ISR, CHANGE);
@@ -228,13 +228,36 @@ void initDeejControl() {
     Serial.println("Deej Control Initialized");
 }
 
+extern void startWifiSetupMode();
+
 void runDeejControl() {
+    // If we are in WiFi setup mode, do nothing
+    if (inWifiSetupMode) {
+        return;
+    }
+
     bool valueChanged = false;
+
+    // Check long-press on ENCODER2_SW
+    if (digitalRead(ENCODER2_SW) == LOW && !encoder2LongPressActive) {
+        encoder2PressStart = millis();
+        encoder2LongPressActive = true;
+    } else if (digitalRead(ENCODER2_SW) == HIGH && encoder2LongPressActive) {
+        encoder2LongPressActive = false;
+    }
+
+    // If pressed > 10s
+    if (encoder2LongPressActive && (millis() - encoder2PressStart > 10000)) {
+        encoder2LongPressActive = false;
+        Serial.println("Long press detected. Entering WiFi setup mode.");
+        startWifiSetupMode();
+        return;
+    }
 
     // Adjust Slider Values
     if (encoderDelta1 != 0) {
         if (mutedStates[currentSlider]) {
-            // If muted, restore previous value and unmute before adjusting
+            // Unmute before adjusting
             sliderValues[currentSlider] = previousValues[currentSlider];
             mutedStates[currentSlider] = false;
         }
@@ -246,8 +269,6 @@ void runDeejControl() {
 
     // Change Slider Selection
     if (encoderDelta2 != 0) {
-        // Wrap-around for slider selection is currently enabled. If you do not want wrap-around for sliders:
-        // Remove modulo and use constraints. For now, keep as is.
         currentSlider = (currentSlider + encoderDelta2 + numSliders) % numSliders;
         encoderDelta2 = 0;
     }
@@ -256,11 +277,9 @@ void runDeejControl() {
     if (digitalRead(ENCODER1_SW) == LOW && !buttonPressed) {
         delay(200);  // Debounce
         if (mutedStates[currentSlider]) {
-            // If currently muted, unmute by restoring previous value
             sliderValues[currentSlider] = previousValues[currentSlider];
             mutedStates[currentSlider] = false;
         } else {
-            // If not muted, mute by remembering the current value and setting to 0
             previousValues[currentSlider] = sliderValues[currentSlider];
             sliderValues[currentSlider] = 0;
             mutedStates[currentSlider] = true;
@@ -277,26 +296,21 @@ void runDeejControl() {
     u8g2.setCursor(0, 15);
     u8g2.print(sliderNames[currentSlider] + " (" + String(currentSlider + 1) + "/" + String(numSliders) + ")");
 
-    int barWidth = map(sliderValues[currentSlider], 0, 100, 0, 105); // Extend to 100 px
-
-    // Draw a frame at the bottom-left corner, 15 pixels tall, 2 pixels from the bottom
+    int barWidth = map(sliderValues[currentSlider], 0, 100, 0, 105); 
     u8g2.drawFrame(0, 64 - 15 - 2, 105, 15);
-
-    // Draw the filled portion of the bar at the same position and height
     u8g2.drawBox(0, 64 - 15 - 2, barWidth, 15);
 
     if (mutedStates[currentSlider]) {
         u8g2.setCursor(115, 59);
         u8g2.print("M");
-    }
-    else {
+    } else {
         u8g2.setCursor(110, 59);
         u8g2.print(String(sliderValues[currentSlider]));
     }
 
     u8g2.sendBuffer();
 
-    // Print to Serial: Convert 0–100 to 0–1023 for output
+    // Print to Serial in 0–1023 scale
     String builtString;
     for (int i = 0; i < numSliders; i++) {
         int mappedVal = map(sliderValues[i], 0, 100, 0, 1023);
@@ -312,9 +326,8 @@ void runDeejControl() {
         lastChangeTime = millis();
     }
 
-    // If data is dirty, check if 10 seconds passed since last change
     if (dataDirty && (millis() - lastChangeTime > writeInterval)) {
-        // 10 seconds of inactivity: save if different
+        // 10 seconds of inactivity
         if (valuesAreDifferent()) {
             if (saveSliderConfig()) {
                 markDataSaved();
