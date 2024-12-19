@@ -4,7 +4,7 @@ This project allows you to control audio sliders in **deej** using an ESP32 with
 
 > **Note:** This is a very early version, but it should work!
 
-![Immagine WhatsApp 2024-12-17 ore 19 52 18_7157971c](https://github.com/user-attachments/assets/2cf8a914-eea8-4546-9692-1be6124d1023)
+![ESP32 Deej Controller Image](https://github.com/user-attachments/assets/56917704-07d3-4f35-8b90-339ccc2c80d7)
 
 ---
 
@@ -12,11 +12,12 @@ This project allows you to control audio sliders in **deej** using an ESP32 with
 - Two rotary encoders: one to select sliders and another to control volume.
 - Display to show the currently selected slider and its volume level.
 - JSON-based configuration for customization of slider names and values.
+- Web UI for easy customization of slider settings.
 
 ---
 
 ## Required Hardware
-1. **ESP32** development board (e.g., ESP32 Wroom; other ESP32 variants will work with minor tweaks).
+1. **ESP32** development board (I used an ESP32 C3 Supermini).
 2. **2 Rotary Encoders** (I used HW-040, but similar encoders can be used).
 3. **Display** (e.g., OLED or LCD compatible with ESP32). 
    - I used the **SH1106 1.3-inch I2C OLED 128x64** display. If you use a different display, you may need to modify the code accordingly.
@@ -24,25 +25,25 @@ This project allows you to control audio sliders in **deej** using an ESP32 with
 ---
 
 ## Schematic & Wiring Guide
-Here is the wiring guide for the components:
+You can customize the pins in the `main.ino` file. The default wiring is as follows:
 
 ### Rotary Encoder 1:
 - **GND** → GND
 - **+** → 3.3V
-- **SW** → D4
-- **DT** → D2
-- **CLK** → D15
+- **SW** → 8
+- **DT** → 10
+- **CLK** → 3
 
 ### Rotary Encoder 2:
 - **GND** → GND
 - **+** → 3.3V
-- **SW** → D21
-- **DT** → D19
-- **CLK** → D18
+- **SW** → 5
+- **DT** → 6
+- **CLK** → 4
 
 ### Display (I2C):
-- **SDA** → D5
-- **SCL** → D17
+- **SDA** → 2
+- **SCL** → 1
 - **VCC** → 3.3V
 - **GND** → GND
 
@@ -52,7 +53,8 @@ Here is the wiring guide for the components:
 1. Install **deej** on your computer: [Get deej here](https://github.com/omriharel/deej).
 2. Flash the provided Arduino code to your ESP32.
 3. Connect the ESP32 to your computer via USB.
-4. Connect to the DEEJ WiFi network and navigate to 192.168.4.1
+4. Connect to the `DEEJ` WiFi network and navigate to `192.168.4.1`.
+5. Upload your custom slider configuration via the web UI.
 6. Run **deej** on your computer, and configure it to recognize the serial input from the ESP32.
 7. Test the rotary encoders to navigate sliders and control volume.
 
@@ -97,10 +99,21 @@ Update these values and upload the JSON to the **ESP32 web UI** to customize the
 
 ---
 
+## Enclosure
+The case files and required hardware can be found here: [Deej32 Enclosure](https://www.printables.com/model/1113764-deej32-enclosure).
+
+### Required Hardware for Enclosure:
+- **4 M3 nuts and bolts** for the display.
+- **2 M3 self-tapping screws** for the faceplate.
+- **4 M2 self-tapping screws** for the rotary encoders.
+
+---
+
 ## Video Build Log
-Check the first part of the prototyping log:
+Check out the first part of the prototyping log:
+[Watch on YouTube](https://youtu.be/bxeFH4jwXGc?si=-9eGGEO2R_Kipmz3)
 
-
+Stay tuned for the second part, coming soon!
 
 ---
 
