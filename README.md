@@ -110,10 +110,10 @@ The case files and required hardware can be found here: [Deej32 Enclosure](https
 ---
 
 ## Video Build Log
-Check out the first part of the prototyping log:
-[Watch on YouTube](https://youtu.be/bxeFH4jwXGc?si=-9eGGEO2R_Kipmz3)
+Check out the prototyping log videos:
 
-Stay tuned for the second part, coming soon!
+- **Part 1**: [Watch on YouTube](https://youtu.be/bxeFH4jwXGc?si=-9eGGEO2R_Kipmz3)
+- **Part 2**: [Watch on YouTube](https://youtu.be/nTDPgiJ3POc)!
 
 ---
 
