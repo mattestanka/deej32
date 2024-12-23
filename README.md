@@ -30,16 +30,16 @@ You can customize the pins in the `main.ino` file. The default wiring is as foll
 ### Rotary Encoder 1:
 - **GND** → GND
 - **+** → 3.3V
-- **SW** → 8
-- **DT** → 10
-- **CLK** → 3
-
-### Rotary Encoder 2:
-- **GND** → GND
-- **+** → 3.3V
 - **SW** → 5
 - **DT** → 6
 - **CLK** → 4
+  
+### Rotary Encoder 2:
+- **GND** → GND
+- **+** → 3.3V
+- **SW** → 8
+- **DT** → 10
+- **CLK** → 3
 
 ### Display (I2C):
 - **SDA** → 2
